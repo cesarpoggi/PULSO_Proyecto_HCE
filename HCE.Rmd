@@ -1,0 +1,388 @@
+---
+title: "HCE"
+author: "Cesar Poggi"
+date: "2/2/2022"
+output: html_document
+---
+
+DATA 1: POR REGIONES
+
+A) Extracción
+```{r}
+library(rio)
+#dataHCE=import("PEI_REGIONES.csv", encoding = 'UTF-8')
+linkData="https://github.com/PULSO-PUCP/ProyectoHCE/raw/main/PEI_REGIONES.csv"
+dataHCE=import(linkData, encoding = 'UTF-8')
+```
+
+
+A) Limpieza y ajuste
+```{r}
+dataHCE$AÑO=as.character(dataHCE$AÑO)
+dataHCE$MES=as.character(dataHCE$MES)
+dataHCE$DIRESA=as.character(dataHCE$DIRESA)
+dataHCE[,c(4:11)]=NULL
+```
+
+
+B) Creación de bases individuales según el año y último mes reportado (ultimo año y mes reportado es Enero 2022)
+```{r}
+library(dplyr)
+dataHCE2018 <- dataHCE %>%
+  filter(AÑO == '2018', MES == '12')
+dataHCE2018= arrange(dataHCE2018, DIRESA) #Solo casos con año 2018 y mes 12, ordenados alfabéticamente por DIRESA
+
+dataHCE2019 <- dataHCE %>%
+  filter(AÑO == '2019', MES == '12')
+dataHCE2019= arrange(dataHCE2019, DIRESA) #Solo casos con año 2019 y mes 12, ordenados alfabéticamente por DIRESA
+
+dataHCE2020 <- dataHCE %>%
+  filter(AÑO == '2020', MES == '12')
+dataHCE2020= arrange(dataHCE2020, DIRESA) #Solo casos con año 2020 y mes 12, ordenados alfabéticamente por DIRESA
+
+dataHCE2021 <- dataHCE %>%
+  filter(AÑO == '2021', MES == '12')
+dataHCE2021= arrange(dataHCE2021, DIRESA) #Solo casos con año 2021 y mes 12, ordenados alfabéticamente por DIRESA
+
+dataHCE2022 <- dataHCE %>%
+  filter(AÑO == '2022', MES == '1')
+dataHCE2022= arrange(dataHCE2022, DIRESA) #Solo casos con año 2022 y mes 1, ordenados alfabéticamente por DIRESA
+```
+
+
+C) Número de implementaciones de la HCE en IPRESS por Año (no acumulativo)
+```{r}
+dataHCE_anual <- dataHCE %>%
+  filter(AÑO == '2018', MES == '12')
+dataHCE_anual= arrange(dataHCE_anual, DIRESA)
+colnames(dataHCE_anual)[c(3)]<-c("18")
+
+dataHCE_anual$'19'=(dataHCE2019$implementado)-(dataHCE2018$implementado)
+dataHCE_anual$'20'=(dataHCE2020$implementado)-(dataHCE2019$implementado)
+dataHCE_anual$'21'=(dataHCE2021$implementado)-(dataHCE2020$implementado)
+dataHCE_anual$'22'=(dataHCE2022$implementado)-(dataHCE2021$implementado)
+
+dataHCE_anual <- dataHCE_anual[, c(1,2,4,3,5,6,7,8)]
+dataHCE_anual[,c(1,2)] = NULL
+```
+
+
+D) HCE Implementadas por año y cantidad actual de EESS implementados (suma de las implementaciones anuales)
+```{r}
+library(stats)
+HCE.AnualTabla = aggregate(cbind(`18`, `19`,`20`,`21`,`22`) ~ NULL, data = dataHCE_anual,sum)
+
+HCE.AnualTabla
+```
+```{r}
+rowSums(HCE.AnualTabla)
+```
+
+
+E) Variación porcentual de las implementaciones anuales
+```{r}
+(((HCE.AnualTabla$'19'*100)/(HCE.AnualTabla$'18')-100)) #Variación % del Nro de implementaciones del 2018 al 2019
+(((HCE.AnualTabla$'20'*100)/(HCE.AnualTabla$'19')-100)) #Variación % del Nro de implementaciones del 2019 al 2020
+(((HCE.AnualTabla$'21'*100)/(HCE.AnualTabla$'20')-100)) #Variación % del Nro de implementaciones del 2020 al 2021
+```
+
+
+F) Número de implementaciones de la HCE en IPRESS por Año (acumulativo)
+```{r}
+dataHCE_anual_acu <- dataHCE %>%
+  filter(AÑO == '2018', MES == '12')
+dataHCE_anual_acu= arrange(dataHCE_anual_acu, DIRESA)
+colnames(dataHCE_anual_acu)[c(3)]<-c("18")
+
+dataHCE_anual_acu$'19'=dataHCE2019$implementado
+dataHCE_anual_acu$'20'=dataHCE2020$implementado
+dataHCE_anual_acu$'21'=dataHCE2021$implementado
+dataHCE_anual_acu$'22'=dataHCE2022$implementado
+
+dataHCE_anual_acu <- dataHCE_anual_acu[, c(1,2,4,3,5,6,7,8)]
+dataHCE_anual_acu[,c(1,2)] = NULL
+```
+
+```{r}
+library(stats)
+HCE.AnualTabla_0 = aggregate(cbind(`18`, `19`,`20`,`21`,`22`) ~ NULL, data = dataHCE_anual_acu,sum)
+HCE.AnualTabla_0
+```
+
+```{r}
+dataLLAMADAS1=as.data.frame(t(HCE.AnualTabla_0))
+dataLLAMADAS1$año <- row.names(dataLLAMADAS1)
+row.names(dataLLAMADAS1) = NULL
+colnames(dataLLAMADAS1)[c(1)]<-c("implementado")
+dataLLAMADAS1[1, 2]<-"2018"
+dataLLAMADAS1[2, 2]<-"2019"
+dataLLAMADAS1[3, 2]<-"2020"
+dataLLAMADAS1[4, 2]<-"2021"
+dataLLAMADAS1[5, 2]<-"2022"
+
+library(plotly)
+figLLA <- plot_ly(dataLLAMADAS1, x = ~año, y = ~implementado, name = 'Implementaciones', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(205, 12, 24)', width = 4))%>%
+  layout(xaxis = list(title = 'año', linecolor="#BCCCDC",
+                      zeroline = F,
+                      showgrid = F
+                     ),
+         yaxis = list(title = 'implementaciones', linecolor="#BCCCDC",
+                      zeroline = F,
+                      showgrid = F), title= "Número de IPRESS con el SIHCE implementado" )
+figLLA
+```
+
+
+G) Gráfico interactivo de la implementación del SIHCE por regiones, de forma acumulada.
+```{r}
+dataPLOTLY=as.data.frame(t(dataHCE_anual_acu))
+colnames(dataPLOTLY)=dataPLOTLY[c(1),]
+dataPLOTLY=dataPLOTLY[-c(1),]
+dataPLOTLY$AÑO <- row.names(dataPLOTLY)
+row.names(dataPLOTLY) = NULL
+dataPLOTLY[1, 30]<-"2018"
+dataPLOTLY[2, 30]<-"2019"
+dataPLOTLY[3, 30]<-"2020"
+dataPLOTLY[4, 30]<-"2021"
+dataPLOTLY[5, 30]<-"2022"
+library(dplyr)
+dataPLOTLY <- dataPLOTLY %>% 
+  mutate_at(c(1:29), as.numeric)
+
+library(janitor)
+dataPLOTLY <- clean_names(dataPLOTLY)
+```
+
+```{r, fig.width=14, fig.height=30}
+library(plotly)
+fig <- plot_ly(dataPLOTLY, x = ~ano, y = ~amazonas, name = 'AMAZONAS', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(205, 12, 24)', width = 4))
+fig <- fig %>% add_trace(y = ~ancash, name = 'ANCASH', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(0,100,0)', width = 4))
+fig <- fig %>% add_trace(y = ~apurimac, name = 'APURIMAC', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(138,43,226)', width = 4))
+fig <- fig %>% add_trace(y = ~arequipa, name = 'AREQUIPA', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(205,133,63)', width = 4))
+fig <- fig %>% add_trace(y = ~ayacucho, name = 'AYACUCHO', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(176,196,222)', width = 4))
+fig <- fig %>% add_trace(y = ~cajamarca, name = 'CAJAMARCA', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(255,215,0)', width = 4))
+fig <- fig %>% add_trace(y = ~callao, name = 'CALLAO', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(0,128,128)', width = 4))
+fig <- fig %>% add_trace(y = ~cusco, name = 'CUSCO', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(255,160,122)', width = 4))
+fig <- fig %>% add_trace(y = ~huancavelica, name = 'HUANCAVELICA', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(65,105,225)', width = 4))
+fig <- fig %>% add_trace(y = ~huanuco, name = 'HUANUCO', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(255,105,180)', width = 4))
+fig <- fig %>% add_trace(y = ~ica, name = 'ICA', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(128,0,0)', width = 4))
+fig <- fig %>% add_trace(y = ~junin, name = 'JUNIN', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(128,0,128)', width = 4))
+fig <- fig %>% add_trace(y = ~la_libertad, name = 'LA LIBERTAD', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(128,128,0)', width = 4))
+fig <- fig %>% add_trace(y = ~lambayeque, name = 'LAMBAYEQUE', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(255,255,0)', width = 4))
+fig <- fig %>% add_trace(y = ~lima, name = 'LIMA', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(0,255,0)', width = 4))
+fig <- fig %>% add_trace(y = ~lima_centro, name = 'LIMA CENTRO', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(255,69,0)', width = 4))
+fig <- fig %>% add_trace(y = ~lima_este, name = 'LIMA ESTE', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(123,104,238)', width = 4))
+fig <- fig %>% add_trace(y = ~lima_norte, name = 'LIMA NORTE', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(188,143,143)', width = 4))
+fig <- fig %>% add_trace(y = ~lima_sur, name = 'LIMA SUR', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(105,105,105)', width = 4))
+fig <- fig %>% add_trace(y = ~loreto, name = 'LORETO', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(75,0,130)', width = 4))
+fig <- fig %>% add_trace(y = ~madre_de_dios, name = 'MADRE DE DIOS', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(30,144,255)', width = 4))
+fig <- fig %>% add_trace(y = ~moquegua, name = 'MOQUEGUA', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(143,188,143)', width = 4))
+fig <- fig %>% add_trace(y = ~pasco, name = 'PASCO', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(175,238,238)', width = 4))
+fig <- fig %>% add_trace(y = ~piura, name = 'PIURA', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(50,205,50)', width = 4))
+fig <- fig %>% add_trace(y = ~puno, name = 'PUNO', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(218,165,32)', width = 4))
+fig <- fig %>% add_trace(y = ~san_martin, name = 'SAN MARTIN', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(0,0,139)', width = 4))
+fig <- fig %>% add_trace(y = ~tacna, name = 'TACNA', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(205, 12, 24)', width = 4))
+fig <- fig %>% add_trace(y = ~tumbes, name = 'TUMBES', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(100,149,237)', width = 4))
+fig <- fig %>% add_trace(y = ~ucayali, name = 'UCAYALI', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(220,20,60)', width = 4))
+
+fig
+```
+
+
+
+
+DATA2: POR EESS
+
+
+H) Extracción 
+DESCARGAR LA DATA PEI_EESS.csv del repositorio de PULSO PUCP
+```{r}
+library(rio)
+dataHCEind=import("PEI_EESS.csv", encoding = 'UTF-8')
+```
+
+
+H) Limpieza y Ajuste
+```{r}
+dataHCEind[,c(9:16)] = NULL
+dataHCEind[,c(1,6,7)]=lapply(dataHCEind[,c(1,6,7)],as.character)
+colnames(dataHCEind)[c(2)]<-c("NOMBRE")
+
+#Hay datos repetidos, los eliminaremos según estas variables
+library(dplyr)
+dataHCEind <- dataHCEind %>%
+  distinct(RENAES,NOMBRE,DIRESA,CATEGORIA,INSTITUCION,AÑO,MES, .keep_all= TRUE)
+```
+
+
+I) Selección individual anual de IPRESS con HCE (eliminamos variables que nos sean nombre e implementado)
+```{r}
+library(dplyr)
+dataHCEind2018 <- dataHCEind %>%
+  filter(AÑO == '2018', MES == '12')
+dataHCEind2018= arrange(dataHCEind2018, DIRESA)
+dataHCEind2018[,c(1,4:7)] = NULL
+#Solo casos com año 2018 y mes 12, ordenados alfabéticamente por DIRESA
+
+dataHCEind2019 <- dataHCEind %>%
+  filter(AÑO == '2019', MES == '12')
+dataHCEind2019= arrange(dataHCEind2019, DIRESA)
+dataHCEind2019[,c(1,4:7)] = NULL
+#Solo casos com año 2019 y mes 12, ordenados alfabéticamente por DIRESA
+
+dataHCEind2020 <- dataHCEind %>%
+  filter(AÑO == '2020', MES == '12')
+dataHCEind2020= arrange(dataHCEind2020, DIRESA)
+dataHCEind2020[,c(1,4:7)] = NULL
+#Solo casos com año 2020 y mes 12, ordenados alfabéticamente por DIRESA
+
+dataHCEind2021 <- dataHCEind %>%
+  filter(AÑO == '2021', MES == '10')
+dataHCEind2021 = arrange(dataHCEind2021, DIRESA)
+dataHCEind2021[,c(1,4:7)] = NULL
+#Solo casos com año 2021 y mes 10, ordenados alfabéticamente por DIRESA. La data más actualizada por EESS solo está actualizada hasta Octubre del 2021, por esto en esta parte seleccionamos mes '10'.
+```
+
+
+J) Tabla que muestra en qué año se implementó la HCE en cada EESS 
+```{r}
+dataHCEind_anual <- dataHCEind %>%
+  filter(AÑO == '2018', MES == '12')
+
+dataHCEind_anual= arrange(dataHCEind_anual, NOMBRE)
+colnames(dataHCEind_anual)[c(8)]<-c("AÑO18")
+
+library(rio)
+dataHCEind_anual=merge(dataHCEind_anual,dataHCEind2019, all=TRUE)
+colnames(dataHCEind_anual)[c(9)]<-c("AÑO19")
+dataHCEind_anual=merge(dataHCEind_anual,dataHCEind2020, all=TRUE)
+colnames(dataHCEind_anual)[c(10)]<-c("AÑO20")
+dataHCEind_anual=merge(dataHCEind_anual,dataHCEind2021, all=TRUE)
+colnames(dataHCEind_anual)[c(11)]<-c("AÑO21")
+
+dataHCEind_anual[,c(6:7)]=NULL
+dataHCEind_anual <- dataHCEind_anual %>%
+  distinct(RENAES,NOMBRE,DIRESA,CATEGORIA,INSTITUCION,.keep_all= TRUE)
+```
+
+
+
+DATOS PARA GRÁFICOS ESTRATIFICADOS
+
+
+K) Cantidad de Establecimientos de Salud por Departamento (Según el total de EESS por región mostrado en el mapa clusterizado del portal REUNIS)
+```{r}
+library(rio)
+linkData7="https://github.com/PULSO-PUCP/ProyectoHCE/raw/main/nroeess.csv"
+a1=import(linkData7, encoding = 'UTF-8')
+```
+
+
+L) Cantidad de Establecimientos de Salud por Departamento que tienen la HCE implementada (Data de implementación por departamentos actualizada a enero 2022)
+```{r}
+dataHCE2022.1 <- dataHCE %>%
+  filter(AÑO == '2022', MES == '1')
+dataHCE2022.1= arrange(dataHCE2022.1, DIRESA)
+
+
+GRAPH = aggregate(implementado ~ DIRESA, data = dataHCE2022.1,sum)
+colnames(GRAPH)[2]= c("imp_22")
+colnames(GRAPH)[1]= c("DEPARTAMEN")
+
+GRAPH
+sum(GRAPH$imp_22)
+```
+
+
+M) Merge y nueva columna sobre el avance respecto al total (Se utilizan los datos de "K"; es decir el total de IPRESS y también se utilizan los datos de "L")
+```{r}
+dataCLUSTER=merge(a1,GRAPH)
+dataCLUSTER$avance=((dataCLUSTER$imp_22)/(dataCLUSTER$n)*100)
+```
+
+
+N) Creación manual de estratos
+```{r}
+dataCLUSTER$nivel = ifelse(dataCLUSTER$avance <= 10,1,
+                             ifelse(dataCLUSTER$avance>10 & dataCLUSTER$avance<=30,2,
+                                             ifelse(dataCLUSTER$avance>30 & dataCLUSTER$avance<=50,3,
+                                                    ifelse(dataCLUSTER$avance>50 & dataCLUSTER$avance<=70,4,
+                                                           ifelse(dataCLUSTER$avance>70 & dataCLUSTER$avance<=100,5,0)))))
+
+dataCLUSTER$nivel=as.character(dataCLUSTER$nivel)
+dataCLUSTER2 = dataCLUSTER[-c(16:19),]
+dataCLUSTER2$nivel=as.character(dataCLUSTER2$nivel)
+```
+
+
+o) Gráfico de mapa estratificado sobre el porcentaje de avance de la implementación de la HCE por regiones
+```{r}
+library(sf)
+linkMapa2="https://github.com/PULSO-PUCP/ProyectoHCE/blob/main/DEPARTAMENTOS.json?raw=true"
+mapaProv=read_sf(linkMapa2)
+
+#plot(mapaProv) #PARA REVISAR LAS CAPAS Y NOMBRES
+
+mapaProv=merge(mapaProv,dataCLUSTER2, by="DEPARTAMEN")
+
+library(ggplot2)
+base= ggplot(data=mapaProv) + theme_void() +
+  scale_fill_manual(values=c("#fff7fb", "#d0d1e6", "#74a9cf","#0570b0","#023858"))+
+  geom_sf(aes(fill=nivel), color="black")
+base
+```
+
+
+P)Gráfico estratificado sobre el porcentaje de avance de la implementación de la HCE por regiones (incluido Lima Metropolitana)
+```{r}
+#dataCLUSTER$avancered<-round(dataCLUSTER$avance, digits=1)
+#library(ggplot2)
+#fig3<-ggplot(dataCLUSTER, aes(x=avance, y=DEPARTAMEN, fill=nivel)) + theme_minimal() +
+#  scale_fill_manual(values=c("#d3d3d3", "#a1b2c1", "#7091af","#3e709d","#0d4f8b"))+
+#  geom_bar(position = position_dodge(0.9), stat="identity")+
+#  geom_text(aes(label=avancered))
+#fig3
+
+#scale_fill_manual(values=c("#cfe8ff", "#9ec2e2", "#6e9bc5","#3e75a8","#0D4F8B"))+
+#scale_fill_manual(values=c("#f2f556", "#b9cb63", "#80a271","#46787e","#0D4F8B"))+
+
+dataCLUSTER$avance<-round(dataCLUSTER$avance, digits=1)
+h<-dataCLUSTER$avance
+library(plotly)
+fig9=plot_ly(dataCLUSTER, x = ~avance, y = ~DEPARTAMEN, type = 'bar', text = h, textposition = 'outside',
+             color = ~nivel, colors = c("#d3d3d3", "#a1b2c1", "#7091af","#3e709d","#0d4f8b"), legendgroup = ~nivel)
+fig9 <- fig9 %>% layout(xaxis = list(title = '% de EESS con SIHCE implementado por departamento (a Octubre 2021)'), barmode = 'bar', color = 'nivel')
+fig9 <- fig9 %>% layout(yaxis = list(title = 'Departamento'), barmode = 'bar', color = 'nivel')
+fig9
+```
+

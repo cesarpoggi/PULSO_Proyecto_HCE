@@ -1,0 +1,43 @@
+---
+title: "EsSalud"
+author: "Cesar Poggi"
+date: "4/4/2022"
+output: html_document
+---
+
+A) Extracción de la data
+```{r}
+library(rio)
+linkData4="https://github.com/cesarpoggi/ProyectoHCE/raw/main/anexoEsSalud.csv"
+ES=import(linkData4, encoding="UTF-8")
+```
+
+B) Creación de nueva varaible para nivel del establecimiento según su clasificación MINSA
+```{r}
+ES$NIVEL = ifelse(ES$C_MINSA %in% c("I-2","I-3","I-4"),1,
+                  ifelse(ES$C_MINSA %in% c("II-1","II-2","II-E"),2,
+                         ifelse(ES$C_MINSA %in% c("III-1","III-2","III-E"),3,"Otro")))
+                             
+```
+
+C) Extracción de la data necesaria para el gráfico
+```{r}
+HCEEsS=table(ES$NIVEL)
+HCEEsSGRAPH=as.data.frame(HCEEsS)
+colnames(HCEEsSGRAPH)[c(1)]<-c("Nivel")
+```
+
+D) Gráfico interactivo sobre la cantidad de establecimientos de EsSalud
+```{r}
+library(plotly)
+figES=plot_ly(HCEEsSGRAPH, x = ~Nivel, y = ~Freq, type = 'bar', name = 'Frecuencia')%>%
+  layout(xaxis = list(title = 'Nivel', linecolor="#BCCCDC",
+                      zeroline = F,
+                      showgrid = F
+                     ),
+         yaxis = list(title = 'Frecuencia', linecolor="#BCCCDC",
+                      zeroline = F,
+                      showgrid = F), title = "Cantidad de IPRESS de EsSalud")
+figES
+```
+

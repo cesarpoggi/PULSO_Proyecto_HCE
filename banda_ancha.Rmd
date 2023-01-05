@@ -1,0 +1,238 @@
+---
+title: "Banda Ancha"
+author: "Cesar Poggi"
+date: "15/2/2022"
+output: html_document
+---
+
+Data OPSITEL
+```{r}
+library(rio)
+linkData2="https://github.com/PULSO-PUCP/ProyectoHCE/blob/main/CONEXIONES_INTERNET_FIJO_PUNKU.csv?raw=true"
+dataPUNKU=import(linkData2, encoding="UTF-8")
+```
+
+a) Limpieza
+```{r}
+dataPUNKU<-dataPUNKU[-c(1,2),]
+
+colnames(dataPUNKU) <- dataPUNKU[1,]
+dataPUNKU <- dataPUNKU[-1, ] 
+
+row.names(dataPUNKU) = NULL
+
+dataPUNKU$Tecnología = replace(dataPUNKU$Tecnología, dataPUNKU$Tecnología == "5) Otras tecnologías", "5) Otras Tecnologías")
+```
+
+a) Transformar
+```{r}
+library(readr)
+dataPUNKU$Conexiones<-parse_number(dataPUNKU$Conexiones)
+
+library(stringr)
+dataPUNKU$Año=str_split(string = dataPUNKU$Mes,
+                        pattern = "-",
+                        simplify = T)[,2]
+
+dataPUNKU$Mes=str_split(string = dataPUNKU$Mes,
+                        pattern = "-",
+                        simplify = T)[,1]
+
+
+dataPUNKU$Trimestre = ifelse(dataPUNKU$Mes == "Mar", 1,
+                             ifelse(dataPUNKU$Mes == "Jun", 2,
+                                    ifelse(dataPUNKU$Mes == "Set", 3,
+                                           ifelse(dataPUNKU$Mes == "Dic", 4,0))))
+
+dataPUNKU = dataPUNKU[,c(1,8,9,2,3,4,5,6,7)]
+```
+
+a) Separar
+```{r}
+library(dplyr)
+
+#Para visualización individual por trimestre
+
+dataPUNKU17_1 <- dataPUNKU %>%
+  filter(Año == '17', Trimestre == '1')
+dataPUNKU17_2 <- dataPUNKU %>%
+  filter(Año == '17', Trimestre == '2')
+dataPUNKU17_3 <- dataPUNKU %>%
+  filter(Año == '17', Trimestre == '3')
+dataPUNKU17_4 <- dataPUNKU %>%
+  filter(Año == '17', Trimestre == '4')
+
+dataPUNKU18_1 <- dataPUNKU %>%
+  filter(Año == '18', Trimestre == '1')
+dataPUNKU18_2 <- dataPUNKU %>%
+  filter(Año == '18', Trimestre == '2')
+dataPUNKU18_3 <- dataPUNKU %>%
+  filter(Año == '18', Trimestre == '3')
+dataPUNKU18_4 <- dataPUNKU %>%
+  filter(Año == '18', Trimestre == '4')
+
+dataPUNKU19_1 <- dataPUNKU %>%
+  filter(Año == '19', Trimestre == '1')
+dataPUNKU19_2 <- dataPUNKU %>%
+  filter(Año == '19', Trimestre == '2')
+dataPUNKU19_3 <- dataPUNKU %>%
+  filter(Año == '19', Trimestre == '3')
+dataPUNKU19_4 <- dataPUNKU %>%
+  filter(Año == '19', Trimestre == '4')
+
+dataPUNKU20_1 <- dataPUNKU %>%
+  filter(Año == '20', Trimestre == '1')
+dataPUNKU20_2 <- dataPUNKU %>%
+  filter(Año == '20', Trimestre == '2')
+dataPUNKU20_3 <- dataPUNKU %>%
+  filter(Año == '20', Trimestre == '3')
+dataPUNKU20_4 <- dataPUNKU %>%
+  filter(Año == '20', Trimestre == '4')
+
+
+dataPUNKU21_1 <- dataPUNKU %>%
+  filter(Año == '21', Trimestre == '1')
+dataPUNKU21_2 <- dataPUNKU %>%
+  filter(Año == '21', Trimestre == '2')
+dataPUNKU21_3 <- dataPUNKU %>%
+  filter(Año == '21', Trimestre == '3')
+```
+
+
+***Análisis Descriptivo***
+ANALISIS SE HARÁN UTILIZANDO EL 3ER TRIMESTRE DE CADA AÑO
+
+b) CANTIDAD DE CONEXIONES POR AÑO (DESDE 2017 HASTA 2021 SEGÚN EL RESPECTIVO TERCER TRIMESTRE)
+```{r}
+((Conexiones21_3 = sum(dataPUNKU21_3$Conexiones))) #Cantidad de Conexiones del 2021
+((Conexiones20_3 = sum(dataPUNKU20_3$Conexiones))) #Cantidad de Conexiones del 2020
+((Conexiones19_3 = sum(dataPUNKU19_3$Conexiones))) #Cantidad de Conexiones del 2019
+((Conexiones18_3 = sum(dataPUNKU18_3$Conexiones))) #Cantidad de Conexiones del 2018
+((Conexiones17_3 = sum(dataPUNKU17_3$Conexiones))) #Cantidad de Conexiones del 2017
+```
+
+
+c) DIFERENCIA DE LA CANTIDAD DE CONEXIONES ENTRE EL AÑO 2021 Y AÑOS ANTERIORES (SEGÚN TERCER TRIMESTRE)
+```{r}
+((Conexiones21_3 - Conexiones20_3)) #Diferencia entre la cantidad de conexiones del 2021 y del 2020
+((Conexiones21_3 - Conexiones19_3)) #Diferencia entre la cantidad de conexiones del 2021 y del 2019
+((Conexiones21_3 - Conexiones18_3)) #Diferencia entre la cantidad de conexiones del 2021 y del 2018
+((Conexiones21_3 - Conexiones17_3)) #Diferencia entre la cantidad de conexiones del 2021 y del 2017
+```
+
+
+d) Variación porcentual de las conexiones a internet a travez de los años (desde el 2017 hasta 2021)
+```{r}
+(a=((Conexiones21_3*100)/Conexiones20_3)-100) #Variación % del 2020 al 2021
+(b=((Conexiones20_3*100)/Conexiones19_3)-100) #Variación % del 2019 al 2020
+(c=((Conexiones19_3*100)/Conexiones18_3)-100) #Variación % del 2018 al 2019
+(d=((Conexiones18_3*100)/Conexiones17_3)-100) #Variación % del 2017 al 2018
+```
+
+
+e) CANTIDAD DE CONEXIONES SEGÚN TECNOLOGÍA (TRIMESTRE A ESCOGER)
+```{r}
+#Cambiar según el Año y Trimestre que se busque analizar (Formato: dataPUNKUaño_trimestre)
+DATA1 = dataPUNKU17_3
+
+PUNKUTabla1 = aggregate(Conexiones ~ Año + Trimestre + Tecnología, data = DATA1,sum)
+PUNKUTabla1
+```
+
+
+f) VISUALIZACIÓN DE LAS TENDENCIAS DE TECNOLOGÍA DE INTERNET FIJO (MANUAL)
+```{r}
+año <- c("2017","2018","2019","2020","2021")
+DialUp_Fijo <- c(286,0,0,0,0)
+xDSL <- c(1097169, 765158, 333011, 212383, 129982)
+Cablemódem <- c(1039302,1466723,1677277,1828442,2030501)
+Wimax <- c(18485,16025,15445,1771,1328)
+Otras_Tecnologías <- c(122631,235710,394320,583980,870653)
+
+dataGRAPH <- data.frame(año, DialUp_Fijo, xDSL,Cablemódem,Wimax,Otras_Tecnologías)
+
+library(plotly)
+fig1=plot_ly(dataGRAPH, x = ~año, y = ~DialUp_Fijo, type = 'bar', name = 'Dial-Up Fijo')
+fig1 <- fig1 %>% add_trace(y = ~xDSL, name = 'xDSL')
+fig1 <- fig1 %>% add_trace(y = ~Cablemódem, name = 'Cablemódem')
+fig1 <- fig1 %>% add_trace(y = ~Wimax, name = 'Wimax')
+fig1 <- fig1 %>% add_trace(y = ~Otras_Tecnologías, name = 'Otras Tecnologías')
+fig1 <- fig1 %>% layout(yaxis = list(title = 'Cantidad de Conexiones por tipo'), barmode = 'group')
+fig1
+```
+
+
+g) Porcentaje de uso de "Otras Tecnologías" respecto al total de conexiones para el tercer trimerstre del 2021 (MANUAL)
+```{r}
+OT21_3 = 870653
+OT20_3 = 583980
+OT19_3 = 394320
+OT18_3 = 235710
+OT17_3 = 122631
+
+(g=((OT21_3*100)/Conexiones21_3))
+```
+
+
+h) Variación porcentual de la cantidad de conexiones de "Otras Tecnologías" a travez de los años (desde el 2017 hasta 2021 y respecto al tercer trimestre de cada año).
+```{r}
+(h=((OT21_3*100)/OT20_3)-100) #Variación % del 2020 al 2021
+(i=((OT20_3*100)/OT19_3)-100) #Variación % del 2019 al 2020
+(j=((OT19_3*100)/OT18_3)-100) #Variación % del 2018 al 2019
+(k=((OT18_3*100)/OT17_3)-100) #Variación % del 2017 al 2018
+
+```
+
+
+i) CANTIDAD DE TIPO DE CONEXIONES SEGÚN REGION (TRIMESTRE A ESCOGER)
+```{r}
+#Cambiar según el Año y Trimestre que se busque analizar (Formato: dataPUNKUaño_trimestre)
+DATA4 = dataPUNKU21_3
+
+PUNKUTabla4 = aggregate(Conexiones ~ Año + Trimestre + Departamento, data = DATA4,sum)
+PUNKUTabla4
+```
+
+
+j) Gráfico: conexiones según región al último trimestre del 2021
+```{r}
+library(plotly)
+fig2=plot_ly(PUNKUTabla4, x = ~Departamento, y = ~Conexiones, type = 'bar')
+fig2 <- fig2 %>% layout(yaxis = list(title = 'Cantidad de Conexiones'), barmode = 'group')
+fig2
+```
+
+
+k) CANTIDAD DE CONEXIONES SEGÚN EMPRESA (TRIMESTRE A ESCOGER)
+```{r}
+#Cambiar según el Año y Trimestre que se busque analizar (Formato: dataPUNKUaño_trimestre)
+DATA2 = dataPUNKU21_3
+
+PUNKUTabla2 = aggregate(Conexiones ~ Año + Trimestre + Empresa, data = DATA2,sum)
+PUNKUTabla2
+```
+
+
+l)Participación de las empresas con mayor número de conexiones respecto al total de conexiones (MANUAL)
+```{r}
+TP=1859107
+AMP=833870
+EP=123871
+(x=((TP*100)/Conexiones21_3)) #Porcentaje de Participación de Telefónica del Perú para el 2021-3
+(y=((AMP*100)/Conexiones21_3)) #Porcentaje de Participación de América Movil Perú para el 2021-3
+(z=((EP*100)/Conexiones21_3)) #Porcentaje de Participación de Entel Perú para el 2021-3
+```
+
+
+m) CANTIDAD DE CONEXIONES SEGÚN SEGMENTO (TRIMESTRE A ESCOGER)
+```{r}
+#Cambiar según el Año y Trimestre que se busque analizar (Formato: dataPUNKUaño_trimestre)
+DATA3 = dataPUNKU21_3
+
+PUNKUTabla3 = aggregate(Conexiones ~ Año + Trimestre + Segmento, data = DATA3,sum)
+PUNKUTabla3
+```
+
+
+
+

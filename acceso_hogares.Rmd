@@ -1,0 +1,176 @@
+---
+title: "Hogares"
+author: "Cesar Poggi"
+date: "29/1/2022"
+output: html_document
+---
+***DATA 2019***
+
+A) Cargar la Data
+DESCARGAR Y DESCOMPRIMIR ARCHIVO enaho2019.dta para poder leerlo
+```{r}
+library(haven)
+data1=read_dta("enaho2019.dta")
+```
+
+
+B) Agrupar los casos por departamento en una nueva variable. Es decir, por los dos primeros dígitos su ubigeo
+```{r}
+library(stringr)
+data1$loeschen1=substr(data1$ubigeo, 1, 2)
+```
+
+
+C) Sacamos la media de los grupos de valores de la nueva variable. Utilizando el factor de ponderación "factor07".
+```{r}
+library(Hmisc)
+library(plyr) 
+
+tab.descr <- ddply(data1,~loeschen1,summarise,  
+              Media=wtd.mean(p1144,factor07, na.rm=T)*100)
+```
+
+***DATA 2020***
+
+D) Cargar la data
+DESCARGAR Y DESCOMPRIMIR ARCHIVO enaho2020.dta para poder leerlo
+```{r}
+data2=read_dta("enaho2020.dta")
+```
+
+
+E) Agrupar los casos por departamento en una nueva variable. Es decir, por los dos primeros dígitos su ubigeo
+```{r}
+library(stringr)
+data2$loeschen2=substr(data2$ubigeo, 1, 2)
+```
+
+
+F) Sacamos la media de los grupos de valores de la nueva variable. Utilizando el factor de ponderación "factor07" o "factor_p".
+```{r}
+library(Hmisc)
+library(plyr) 
+
+#FACTOR DE EXPANSION FACTOR07
+tab.descr2 <- ddply(data2,~loeschen2,summarise,  
+              Media=wtd.mean(p1144,factor07, na.rm=T)*100)
+
+#FACTOR DE EXPANSIÓN FACTOR_P
+tab.descr3 <- ddply(data2,~loeschen2,summarise,  
+              Media=wtd.mean(p1144,factor_p, na.rm=T)*100)
+```
+
+
+***DATA VARIACIÓN ANUAL***
+
+G) Extracción, modificación y transformación de la data de variación del acceso a internet por región
+```{r}
+library(rio)
+#varia19=import("varia.csv", encoding ="UTF-8")
+linkData1="https://github.com/PULSO-PUCP/ProyectoHCE/raw/main/Varia.csv"
+varia19=import(linkData1,encoding ="UTF-8")
+
+
+varia19[1, 2]<-"loeschen2"
+colnames(varia19)=varia19[c(1),]
+varia19=varia19[-c(1),]
+varia19[c(14,15)]=NULL
+varia19$loeschen2<-c("01","02","03","04","05","06","07","08","09","10","11", "12","13","14","15","16","17","18","19","20","21","22","23","24","25")
+
+varia19=merge(varia19, tab.descr2, by="loeschen2")
+colnames(varia19)[14] <- "2020"
+```
+
+
+H) Gráfico del porcentaje de hogares con acceso a internet (2020), por regiones.
+```{r}
+tab.descr2$departamento = varia19$Var.2
+
+library(plotly)
+tab.descr2$Media<-round(tab.descr2$Media, digits=1)
+y<-tab.descr2$Media
+#y=rev(y)
+fig5=plot_ly(tab.descr2, x = ~Media, y = ~departamento, type = 'bar', text = y, textposition = 'auto')
+fig5 <- fig5 %>% layout(xaxis = list(title = 'Cuenta'), barmode = 'group')
+fig5 <- fig5 %>% layout(yaxis = list(title = 'Departamento'), barmode = 'group')
+fig5
+```
+
+
+I) Creación de una nueva data y modificación de esta para un nuevo gráfico.
+```{r}
+varia19$`2020`<-round(varia19$`2020`, digits=1)
+varia19PLOTLY=as.data.frame(t(varia19))
+library(data.table)
+setDT(varia19PLOTLY, keep.rownames = TRUE)
+varia19PLOTLY=varia19PLOTLY[-c(1),]
+
+varia19PLOTLY<-as.data.frame(varia19PLOTLY)
+
+colnames(varia19PLOTLY)=varia19PLOTLY[c(1),]
+varia19PLOTLY=varia19PLOTLY[-c(1,2,4,5,6,7,9,10,11),]
+
+colnames(varia19PLOTLY)[1] <- "Año"
+
+library(janitor)
+varia19PLOTLY <- clean_names(varia19PLOTLY)
+```
+
+
+J) Gráfico que muestra la evolución del acceso de los hogares a internet, por región y hasta el 2020.
+```{r}
+library(plotly)
+fig6 <- plot_ly(varia19PLOTLY, x = ~ano, y = ~amazonas, name = 'AMAZONAS', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(205, 12, 24)', width = 4))
+fig6 <- fig6 %>% add_trace(y = ~ancash, name = 'ANCASH', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(0,100,0)', width = 4))
+fig6 <- fig6 %>% add_trace(y = ~apurimac, name = 'APURIMAC', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(138,43,226)', width = 4))
+fig6 <- fig6 %>% add_trace(y = ~arequipa, name = 'AREQUIPA', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(205,133,63)', width = 4))
+fig6 <- fig6 %>% add_trace(y = ~ayacucho, name = 'AYACUCHO', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(176,196,222)', width = 4))
+fig6 <- fig6 %>% add_trace(y = ~cajamarca, name = 'CAJAMARCA', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(255,215,0)', width = 4))
+fig6 <- fig6 %>% add_trace(y = ~prov_const_callao, name = 'CALLAO', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(0,128,128)', width = 4))
+fig6 <- fig6 %>% add_trace(y = ~cusco, name = 'CUSCO', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(255,160,122)', width = 4))
+fig6 <- fig6 %>% add_trace(y = ~huancavelica, name = 'HUANCAVELICA', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(65,105,225)', width = 4))
+fig6 <- fig6 %>% add_trace(y = ~huanuco, name = 'HUANUCO', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(255,105,180)', width = 4))
+fig6 <- fig6 %>% add_trace(y = ~ica, name = 'ICA', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(128,0,0)', width = 4))
+fig6 <- fig6 %>% add_trace(y = ~junin, name = 'JUNIN', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(128,0,128)', width = 4))
+fig6 <- fig6 %>% add_trace(y = ~la_libertad, name = 'LA LIBERTAD', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(128,128,0)', width = 4))
+fig6 <- fig6 %>% add_trace(y = ~lambayeque, name = 'LAMBAYEQUE', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(255,255,0)', width = 4))
+fig6 <- fig6 %>% add_trace(y = ~lima, name = 'LIMA', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(0,255,0)', width = 4))
+fig6 <- fig6 %>% add_trace(y = ~loreto, name = 'LORETO', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(75,0,130)', width = 4))
+fig6 <- fig6 %>% add_trace(y = ~madre_de_dios, name = 'MADRE DE DIOS', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(30,144,255)', width = 4))
+fig6 <- fig6 %>% add_trace(y = ~moquegua, name = 'MOQUEGUA', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(143,188,143)', width = 4))
+fig6 <- fig6 %>% add_trace(y = ~pasco, name = 'PASCO', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(175,238,238)', width = 4))
+fig6 <- fig6 %>% add_trace(y = ~piura, name = 'PIURA', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(50,205,50)', width = 4))
+fig6 <- fig6 %>% add_trace(y = ~puno, name = 'PUNO', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(218,165,32)', width = 4))
+fig6 <- fig6 %>% add_trace(y = ~san_martin, name = 'SAN MARTIN', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(0,0,139)', width = 4))
+fig6 <- fig6 %>% add_trace(y = ~tacna, name = 'TACNA', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(205, 12, 24)', width = 4))
+fig6 <- fig6 %>% add_trace(y = ~tumbes, name = 'TUMBES', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(100,149,237)', width = 4))
+fig6 <- fig6 %>% add_trace(y = ~ucayali, name = 'UCAYALI', type = 'scatter', mode = 'lines',
+        line = list(color = 'rgb(220,20,60)', width = 4))
+
+fig6
+```
+
