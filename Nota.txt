@@ -1,3 +1,1 @@
-1. Las bases de datos se encuentran en Dropbox. Hay que modificar los Rmd para que jalen la data desde Dropbox.
-
-2. Informes escritos en DOC y aquellas datos en XSL estarán guardados en el Google Drive. Ya que facilita compartir y trabajar directamente.
+Las bases de datos utilizas son de acceso público. Sin embargo, una copia se encuentran en Dropbox al igual que otros documentos. Hay que modificar los Rmd para que jalen la data desde Dropbox.
